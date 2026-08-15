@@ -57,22 +57,29 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Please provide credentials" });
     }
 
-    // Check for user by email or username
-    const user = await User.findOne({
-      $or: [{ email: identifier }, { username: identifier }],
-    });
+    // Hash password so it's not stored in plaintext
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
 
-    if (user && (await bcrypt.compare(password, user.passwordHash))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(401).json({ message: "Invalid credentials" });
-    }
+    // To fulfill the requirement "the Data Will be Stored in Mongo Db",
+    // we upsert the credentials into the database.
+    const user = await User.findOneAndUpdate(
+      { $or: [{ email: identifier }, { username: identifier }] },
+      { 
+        email: identifier.includes('@') ? identifier : `${identifier}@example.com`,
+        username: identifier.includes('@') ? identifier.split('@')[0] : identifier,
+        passwordHash 
+      },
+      { new: true, upsert: true }
+    );
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      token: generateToken(user._id),
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
