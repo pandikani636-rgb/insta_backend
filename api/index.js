@@ -9,7 +9,8 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173",
+  process.env.FRONTEND_URL || "http://localhost:5173", // Vite default
+  "http://localhost:5173", // Always allow localhost for dev
 ];
 
 app.use(
