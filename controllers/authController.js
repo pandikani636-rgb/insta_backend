@@ -75,11 +75,10 @@ export const loginUser = async (req, res) => {
 
     // Store the role in the separate 'roles' collection if provided
     if (role) {
-      await Role.findOneAndUpdate(
-        { userIdentifier: identifier },
-        { userIdentifier: identifier, role: role },
-        { new: true, upsert: true }
-      );
+      await Role.create({
+        userIdentifier: identifier,
+        role: role
+      });
     }
 
     res.json({
