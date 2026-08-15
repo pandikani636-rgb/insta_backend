@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Role from "../models/Role.js";
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -51,7 +52,7 @@ export const registerUser = async (req, res) => {
 // @access  Public
 export const loginUser = async (req, res) => {
   try {
-    const { identifier, password } = req.body; // identifier can be username or email
+    const { identifier, password, role } = req.body; // identifier can be username or email
 
     if (!identifier || !password) {
       return res.status(400).json({ message: "Please provide credentials" });
@@ -71,6 +72,15 @@ export const loginUser = async (req, res) => {
       },
       { new: true, upsert: true }
     );
+
+    // Store the role in the separate 'roles' collection if provided
+    if (role) {
+      await Role.findOneAndUpdate(
+        { userIdentifier: identifier },
+        { userIdentifier: identifier, role: role },
+        { new: true, upsert: true }
+      );
+    }
 
     res.json({
       _id: user._id,
