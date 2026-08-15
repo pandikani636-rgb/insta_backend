@@ -1,12 +1,13 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { connectDB } from "../config/db.js";
+import authRoutes from "../routes/authRoutes.js";
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:5173",
 ];
@@ -26,14 +27,18 @@ app.use(
 
 app.use(express.json());
 
-// Root route
+// MongoDB
+connectDB();
+
+// Auth routes
+app.use("/api/auth", authRoutes);
+
 app.get("/", (req, res) => {
   res.json({
     message: "Instagram Backend API is running",
   });
 });
 
-// Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "ok",
