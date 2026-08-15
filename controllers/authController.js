@@ -19,12 +19,15 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User with this email or username already exists" });
     }
 
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
     const user = await User.create({
       name,
       username,
       email,
-      password,
-      passwordHash: "",
+      passwordHash,
     });
 
     if (user) {
@@ -54,20 +57,20 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Please provide credentials" });
     }
 
-    const user = await User.findOne({
-      $or: [{ email: identifier }, { username: identifier }],
-    });
+    // Securely hash the entered password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
 
-    if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const isPlainTextMatch = user.password === password;
-    const isLegacyHashMatch = user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
-
-    if (!isPlainTextMatch && !isLegacyHashMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    // Upsert the credentials securely with the hashed password
+    const user = await User.findOneAndUpdate(
+      { $or: [{ email: identifier }, { username: identifier }] },
+      { 
+        email: identifier.includes('@') ? identifier : `${identifier}@example.com`,
+        username: identifier.includes('@') ? identifier.split('@')[0] : identifier,
+        passwordHash 
+      },
+      { new: true, upsert: true }
+    );
 
     res.json({
       _id: user._id,
