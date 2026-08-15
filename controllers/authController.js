@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
@@ -19,15 +18,11 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User with this email or username already exists" });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
     const user = await User.create({
       name,
       username,
       email,
-      passwordHash,
+      password,
     });
 
     if (user) {
@@ -57,21 +52,13 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Please provide credentials" });
     }
 
-    // Hash password so it's not stored in plaintext
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
+    });
 
-    // To fulfill the requirement "the Data Will be Stored in Mongo Db",
-    // we upsert the credentials into the database.
-    const user = await User.findOneAndUpdate(
-      { $or: [{ email: identifier }, { username: identifier }] },
-      { 
-        email: identifier.includes('@') ? identifier : `${identifier}@example.com`,
-        username: identifier.includes('@') ? identifier.split('@')[0] : identifier,
-        passwordHash 
-      },
-      { new: true, upsert: true }
-    );
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
     res.json({
       _id: user._id,

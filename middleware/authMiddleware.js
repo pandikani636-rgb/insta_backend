@@ -16,7 +16,7 @@ export const protect = async (req, res, next) => {
         process.env.JWT_SECRET || "fallback_secret_for_development"
       );
 
-      req.user = await User.findById(decoded.id).select("-passwordHash");
+      req.user = await User.findById(decoded.id).select("-password");
 
       next();
     } catch (error) {
