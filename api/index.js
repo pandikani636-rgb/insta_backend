@@ -9,21 +9,9 @@ dotenv.config();
 const app = express();
 
 // Middleware
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://instagramnewupdate.vercel.app",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: true, // Automatically reflect the request origin
     credentials: true,
   })
 );
