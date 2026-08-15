@@ -7,20 +7,20 @@ export const connectDB = async () => {
     if (cachedConnection && mongoose.connection.readyState === 1) {
       return cachedConnection;
     }
-
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is not defined in environment variables");
+    const defaultUri = "mongodb+srv://pandikani636_db_user:877887spkpandikani2101@cluster0.chwzj4f.mongodb.net/instaclone?retryWrites=true&w=majority&appName=Cluster0";
+    
+    let uri = process.env.MONGO_URI;
+    if (!uri || uri.includes("cluster.mongodb.net") || uri.includes("cluster0.mongodb.net")) {
+      uri = defaultUri;
     }
 
-    cachedConnection = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 10000,
-    });
-
-    console.log("MongoDB Connected Successfully");
-
+    const conn = await mongoose.connect(uri);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    
+    cachedConnection = conn;
     return cachedConnection;
   } catch (error) {
-    console.error("MongoDB Connection Error:", error.message);
+    console.error(`Error connecting to MongoDB: ${error.message}`);
     throw error;
   }
 };
