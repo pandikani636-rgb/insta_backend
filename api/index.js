@@ -8,10 +8,12 @@ dotenv.config();
 
 const app = express();
 
+// Middleware
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173", // Vite default
-  "http://localhost:5173", // Always allow localhost for dev
-];
+  "http://localhost:5173",
+  "https://instagramnewupdate.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
 
 app.use(
   cors({
@@ -28,18 +30,32 @@ app.use(
 
 app.use(express.json());
 
-// MongoDB
-connectDB();
+// Connect MongoDB before handling API request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+
+    res.status(500).json({
+      message: "Database connection failed",
+      error: error.message,
+    });
+  }
+});
 
 // Auth routes
 app.use("/api/auth", authRoutes);
 
+// Root
 app.get("/", (req, res) => {
   res.json({
     message: "Instagram Backend API is running",
   });
 });
 
+// Health
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "ok",

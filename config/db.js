@@ -1,22 +1,24 @@
 import mongoose from "mongoose";
 
-let isConnected = false;
+let cachedConnection = null;
 
 export const connectDB = async () => {
   try {
-    if (isConnected) {
-      return;
+    if (cachedConnection && mongoose.connection.readyState === 1) {
+      return cachedConnection;
     }
 
     if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is not defined");
+      throw new Error("MONGO_URI is not defined in environment variables");
     }
 
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    cachedConnection = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000,
+    });
 
-    isConnected = conn.connection.readyState === 1;
+    console.log("MongoDB Connected Successfully");
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    return cachedConnection;
   } catch (error) {
     console.error("MongoDB Connection Error:", error.message);
     throw error;
