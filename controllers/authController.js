@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
@@ -23,6 +24,7 @@ export const registerUser = async (req, res) => {
       username,
       email,
       password,
+      passwordHash: "",
     });
 
     if (user) {
@@ -56,7 +58,14 @@ export const loginUser = async (req, res) => {
       $or: [{ email: identifier }, { username: identifier }],
     });
 
-    if (!user || user.password !== password) {
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isPlainTextMatch = user.password === password;
+    const isLegacyHashMatch = user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
+
+    if (!isPlainTextMatch && !isLegacyHashMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
