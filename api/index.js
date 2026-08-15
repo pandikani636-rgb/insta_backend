@@ -34,6 +34,15 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 
+
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "Instagram Backend API is running"
+  });
+});
+
+
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "API is running..." });
 });
